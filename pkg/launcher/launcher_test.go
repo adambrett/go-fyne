@@ -25,7 +25,8 @@ func TestLauncher_RememberItem_UpdatesPreferences(t *testing.T) {
 	app := test.NewApp()
 	first := touchItemFile(t, "first.db")
 	second := touchItemFile(t, "second.db")
-	l := launcher.New(app.Preferences(), app.NewWindow("test"), newTestItem, openTestItem, launcher.WithRecentLimit(2))
+	recents := recent.New(app.Preferences(), recent.WithLimit(2))
+	l := launcher.New(recents, app.NewWindow("test"), newTestItem, openTestItem)
 
 	// When
 	l.RememberItem(recent.Item{Path: first})
@@ -43,10 +44,11 @@ func TestLauncher_RecentItems_LoadsPreferences(t *testing.T) {
 	first := touchItemFile(t, "first.db")
 	second := touchItemFile(t, "second.db")
 	app.Preferences().SetStringList(recent.DefaultPreferencesKey, []string{first})
+	recents := recent.New(app.Preferences())
 
 	// When
 	l := launcher.New(
-		app.Preferences(),
+		recents,
 		app.NewWindow("test"),
 		newTestItem,
 		openTestItem,
@@ -64,6 +66,20 @@ func TestLauncher_RecentItems_LoadsPreferences(t *testing.T) {
 	assert.Equal(t, []string{second, first}, app.Preferences().StringList(recent.DefaultPreferencesKey))
 }
 
+func TestLauncher_AcceptsCustomRecents(t *testing.T) {
+	// Given
+	app := test.NewApp()
+	recents := &fakeRecents{}
+	l := launcher.New(recents, app.NewWindow("test"), newTestItem, openTestItem)
+	item := recent.Item{Path: "/tmp/custom.db"}
+
+	// When
+	l.RememberItem(item)
+
+	// Then
+	assert.Equal(t, []recent.Item{item}, recents.added)
+}
+
 func TestLauncher_Container_WiresCallbacksAndOptions(t *testing.T) {
 	// Given
 	app := test.NewApp()
@@ -71,12 +87,13 @@ func TestLauncher_Container_WiresCallbacksAndOptions(t *testing.T) {
 	second := touchItemFile(t, "second.db")
 	third := touchItemFile(t, "third.db")
 	app.Preferences().SetStringList(recent.DefaultPreferencesKey, []string{first, second})
+	recents := recent.New(app.Preferences(), recent.WithLimit(2))
 
 	var newItem bool
 	var opened recent.Item
 
 	l := launcher.New(
-		app.Preferences(),
+		recents,
 		app.NewWindow("test"),
 		func() (recent.Item, bool) {
 			newItem = true
@@ -105,17 +122,18 @@ func TestLauncher_Container_WiresCallbacksAndOptions(t *testing.T) {
 	root := layOutLauncherForTap(l)
 
 	tapButtonWithText(t, leftActionsVBox(root), "Create")
+	tapButtonWithText(t, leftActionsVBox(root), "Browse")
 
-	recents := rightRecentVBox(root)
-	test.Tap(recents.Objects[1].(fyne.Tappable))
+	recentBox := rightRecentVBox(root)
+	test.Tap(recentBox.Objects[1].(fyne.Tappable))
 
-	removeCtl := test.WidgetRenderer(recents.Objects[2].(fyne.Widget)).Objects()[3]
+	removeCtl := test.WidgetRenderer(recentBox.Objects[2].(fyne.Widget)).Objects()[3]
 	test.Tap(removeCtl.(fyne.Tappable))
 
 	// Then
 	assert.True(t, newItem)
 	assert.Equal(t, third, opened.Path)
-	assert.Equal(t, []string{third, second}, app.Preferences().StringList(recent.DefaultPreferencesKey))
+	assert.Equal(t, []string{third}, app.Preferences().StringList(recent.DefaultPreferencesKey))
 }
 
 func newTestItem() (recent.Item, bool) {
@@ -123,6 +141,25 @@ func newTestItem() (recent.Item, bool) {
 }
 
 func openTestItem(recent.Item) {}
+
+type fakeRecents struct {
+	added []recent.Item
+	items recent.Items
+}
+
+func (r *fakeRecents) Items() recent.Items {
+	return r.items
+}
+
+func (r *fakeRecents) Add(item recent.Item) bool {
+	r.added = append(r.added, item)
+
+	return true
+}
+
+func (r *fakeRecents) Remove(recent.Item) bool {
+	return true
+}
 
 func touchItemFile(t *testing.T, name string) string {
 	t.Helper()

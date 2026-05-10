@@ -29,8 +29,8 @@ func main() {
 
 func newWindow(fyneApp fyne.App) fyne.Window {
 	launcherWindow := fyneApp.NewWindow(windowTitle)
+	recents := recent.New(fyneApp.Preferences())
 
-	var welcome *launcher.Launcher
 	var itemWindow fyne.Window
 
 	closeItem := func() {
@@ -69,12 +69,12 @@ func newWindow(fyneApp fyne.App) fyne.Window {
 	}
 
 	openItem := func(item recent.Item) {
-		welcome.RememberItem(item)
+		recents.Add(item)
 		showItem(item)
 	}
 
-	welcome = launcher.New(
-		fyneApp.Preferences(),
+	welcome := launcher.New(
+		recents,
 		launcherWindow,
 		createItem,
 		openItem,

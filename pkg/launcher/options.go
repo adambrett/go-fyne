@@ -6,16 +6,12 @@ import (
 
 	"github.com/adambrett/go-fyne/pkg/browse"
 	"github.com/adambrett/go-fyne/pkg/launcher/theme"
-	"github.com/adambrett/go-fyne/pkg/recent"
 )
 
 // Option configures a [Launcher].
 type Option func(*options)
 
 type options struct {
-	recentLimit int
-	keepMissing bool
-
 	windowSize  fyne.Size
 	splitOffset float64
 
@@ -39,7 +35,6 @@ type options struct {
 
 func defaultOptions() options {
 	return options{
-		recentLimit:     recent.DefaultLimit,
 		windowSize:      fyne.NewSize(720, 480),
 		splitOffset:     defaultSplitOffset,
 		title:           "Items",
@@ -85,20 +80,6 @@ func WithRecentTitle(v string) Option {
 func WithEmptyRecentText(v string) Option {
 	return func(options *options) {
 		options.emptyRecentText = v
-	}
-}
-
-// WithRecentLimit sets how many recent items are retained.
-func WithRecentLimit(limit int) Option {
-	return func(options *options) {
-		options.recentLimit = limit
-	}
-}
-
-// WithKeepMissingRecentItems keeps recent paths that no longer exist on disk.
-func WithKeepMissingRecentItems(keep bool) Option {
-	return func(options *options) {
-		options.keepMissing = keep
 	}
 }
 

@@ -11,8 +11,8 @@ It gives users the common starting points desktop apps tend to need:
 - reopen something from the recent list
 - remove stale entries from that list
 
-The launcher owns the welcome screen and the recent-list UI. Your application
-owns the actual create and open workflows.
+The launcher owns the welcome screen and recent-list UI. Your application owns
+the actual create/open workflows and recent persistence setup.
 
 # Installation
 
@@ -24,7 +24,7 @@ go get github.com/adambrett/go-fyne
 
 # Basic Usage
 
-Create a window, build a launcher, then use the launcher's canvas object as the
+Create recents, build a launcher, then use the launcher's canvas object as the
 window content:
 
 ```go
@@ -39,10 +39,11 @@ import (
 
 func newLauncherWindow(app fyne.App) fyne.Window {
 	window := app.NewWindow("Items")
+	recents := recent.New(app.Preferences())
 
 	var welcome *launcher.Launcher
 	welcome = launcher.New(
-		app.Preferences(),
+		recents,
 		window,
 		func() (recent.Item, bool) {
 			path, ok := runNewItemFlow()
@@ -66,7 +67,7 @@ func newLauncherWindow(app fyne.App) fyne.Window {
 }
 ```
 
-The two callbacks are the contract between the launcher and your app:
+The callbacks are the contract between the launcher and your app:
 
 ```go
 type CreateItem func() (recent.Item, bool)
@@ -115,12 +116,13 @@ argument, or any other app-specific flow.
 
 # Recent Items
 
-Recent items are persisted through the `fyne.Preferences` value passed to
-`launcher.New`.
+Recent items are owned by your app and passed to `launcher.New`.
 
 ```go
+recents := recent.New(app.Preferences())
+
 welcome := launcher.New(
-	app.Preferences(),
+	recents,
 	window,
 	createItem,
 	openItem,
@@ -138,20 +140,19 @@ item := recent.Item{
 
 If `Name` is empty, `DisplayName` uses the base name of `Path`.
 
-Recent items are normalized to absolute paths, de-duplicated by location,
-pruned when the path no longer exists, and limited to `recent.DefaultLimit`
-entries by default.
+Recent items are normalized to absolute paths, de-duplicated by location, and
+pruned when the path no longer exists by default.
 
 Change the limit with:
 
 ```go
-launcher.WithRecentLimit(10)
+recents := recent.New(app.Preferences(), recent.WithLimit(10))
 ```
 
 Keep missing paths in the list with:
 
 ```go
-launcher.WithKeepMissingRecentItems(true)
+recents := recent.New(app.Preferences(), recent.WithKeepMissing(true))
 ```
 
 That is useful when items may live on removable drives, network shares, or
@@ -166,7 +167,7 @@ instead, pass a browse picker:
 import nativepicker "github.com/adambrett/go-fyne/pkg/browse/native"
 
 welcome := launcher.New(
-	app.Preferences(),
+	recents,
 	window,
 	createItem,
 	openItem,
@@ -201,7 +202,7 @@ Most apps should make that language specific to their own domain:
 
 ```go
 welcome := launcher.New(
-	app.Preferences(),
+	recents,
 	window,
 	createItem,
 	openItem,
@@ -256,7 +257,7 @@ colours you need:
 import launchertheme "github.com/adambrett/go-fyne/pkg/launcher/theme"
 
 welcome := launcher.New(
-	app.Preferences(),
+	recents,
 	window,
 	createItem,
 	openItem,

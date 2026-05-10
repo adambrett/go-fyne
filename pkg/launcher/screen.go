@@ -16,7 +16,7 @@ type screen struct {
 }
 
 func newScreen(
-	recents *recent.Recent,
+	recents Recents,
 	window fyne.Window,
 	createItem func(),
 	openItem func(recent.Item),

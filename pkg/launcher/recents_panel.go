@@ -12,13 +12,13 @@ import (
 type recentsPanel struct {
 	options  options
 	content  *fyne.Container
-	recents  *recent.Recent
+	recents  Recents
 	openItem func(recent.Item)
 }
 
 func newRecentsPanel(
 	options options,
-	recentState *recent.Recent,
+	recentState Recents,
 	openItem func(recent.Item),
 ) *recentsPanel {
 	recents := &recentsPanel{

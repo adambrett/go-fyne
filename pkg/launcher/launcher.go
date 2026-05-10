@@ -13,19 +13,26 @@ type CreateItem func() (recent.Item, bool)
 // OpenItem opens an item chosen from the launcher.
 type OpenItem func(recent.Item)
 
+// Recents is the recent-item state used by the launcher.
+type Recents interface {
+	Items() recent.Items
+	Add(recent.Item) bool
+	Remove(recent.Item) bool
+}
+
 // Launcher is a reusable welcome screen for creating, opening, and selecting
 // recent items.
 type Launcher struct {
 	options    options
-	recent     *recent.Recent
+	recent     Recents
 	screen     *screen
 	createItem CreateItem
 	openItem   OpenItem
 }
 
-// New builds a launcher backed by Fyne preferences.
+// New builds a launcher backed by caller-owned recents.
 func New(
-	preferences fyne.Preferences,
+	recents Recents,
 	window fyne.Window,
 	createItem CreateItem,
 	openItem OpenItem,
@@ -36,12 +43,6 @@ func New(
 	for _, opt := range opts {
 		opt(&options)
 	}
-
-	recents := recent.New(
-		preferences,
-		recent.WithLimit(options.recentLimit),
-		recent.WithKeepMissing(options.keepMissing),
-	)
 
 	l := &Launcher{
 		options:    options,

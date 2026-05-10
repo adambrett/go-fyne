@@ -43,7 +43,7 @@ workspaces, images, saves, databases, or any other app-specific file or folder.
 It includes:
 
 - create and open actions wired back to your app
-- a persisted recent-item list
+- a caller-owned persisted recent-item list
 - stale-entry removal
 - configurable labels, icons, logo, window size, split layout, and colours
 - pluggable file picking through `browse.Picker`
